@@ -978,7 +978,7 @@ class SoC(Module):
                 colorer("\n - ".join(sorted(cpu_cls.variants)))))
             raise SoCError()
         self.check_if_exists("cpu")
-        self.submodules.cpu = cpu_cls(self.platform, variant, postfix)
+        self.submodules.cpu = cpu_cls(self.platform, variant, postfix=postfix)
         self.logger.info("CPU {} {}.".format(
             colorer(name, color="underline"),
             colorer("added", color="green")))

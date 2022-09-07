@@ -268,7 +268,7 @@ class VexRiscvSMP(CPU):
         if os.system(cmd) != 0:
             raise OSError('Failed to run sbt')
 
-    def __init__(self, platform, variant):
+    def __init__(self, platform, variant, **kwargs):
         self.platform         = platform
         self.variant          = "linux"
         self.human_name       = self.human_name + "-" + self.variant.upper()
