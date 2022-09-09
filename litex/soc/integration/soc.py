@@ -1419,6 +1419,7 @@ class LiteXSoC(SoC):
         l2_cache_min_data_width = 128,
         l2_cache_reverse        = False,
         l2_cache_full_memory_we = True,
+        region_name             = "main_ram",
         **kwargs):
 
         # Imports.
@@ -1475,7 +1476,7 @@ class LiteXSoC(SoC):
             sdram_size = min(sdram_size, size)
 
         # Add SDRAM region.
-        self.bus.add_region("main_ram", SoCRegion(origin=self.mem_map.get("main_ram", origin), size=sdram_size))
+        self.bus.add_region(region_name, SoCRegion(origin=self.mem_map.get(region_name, origin), size=sdram_size))
 
         # Add CPU's direct memory buses (if not already declared) ----------------------------------
         if hasattr(self.cpu, "add_memory_buses"):
@@ -1500,7 +1501,7 @@ class LiteXSoC(SoC):
                         self.submodules += LiteDRAMAXI2Native(
                             axi          = mem_bus,
                             port         = port,
-                            base_address = self.bus.regions["main_ram"].origin
+                            base_address = self.bus.regions[region_name].origin
                         )
                     # UpConvert.
                     elif data_width_ratio > 1:
@@ -1515,7 +1516,7 @@ class LiteXSoC(SoC):
                         self.submodules += LiteDRAMAXI2Native(
                             axi          = axi_port,
                             port         = port,
-                            base_address = self.bus.regions["main_ram"].origin
+                            base_address = self.bus.regions[region_name].origin
                         )
                     # DownConvert. FIXME: Pass through Wishbone for now, create/use native AXI converter.
                     else:
@@ -1531,7 +1532,7 @@ class LiteXSoC(SoC):
                         self.submodules += LiteDRAMWishbone2Native(
                             wishbone     = litedram_wb,
                             port         = port,
-                            base_address = self.bus.regions["main_ram"].origin)
+                            base_address = self.bus.regions[region_name].origin)
                         self.submodules += wishbone.Converter(mem_wb, litedram_wb)
 
                 # Check if bus is a Native bus and connect it.
@@ -1559,7 +1560,7 @@ class LiteXSoC(SoC):
 
             # Create Wishbone Slave.
             wb_sdram = wishbone.Interface()
-            self.bus.add_slave("main_ram", wb_sdram)
+            self.bus.add_slave(region_name, wb_sdram)
 
             # L2 Cache
             if l2_cache_size != 0:
