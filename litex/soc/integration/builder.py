@@ -375,7 +375,10 @@ class Builder:
         if self.generate_doc:
             from litex.soc.doc import generate_docs
             generate_docs(self.soc, self.doc_dir)
+            print("Generate doc")
             os.system(f"sphinx-build -M html {self.doc_dir} {self.doc_dir}/_build")
+            print("Copy doc")
+            os.system(f"rm -rf {self.doc_dir}/html")
             os.system(f"cp -r {self.doc_dir}/_build/html {self.doc_dir}/html")
 
         return vns

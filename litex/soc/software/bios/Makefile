@@ -19,7 +19,10 @@ OBJECTS = boot-helper.o	\
 	  cmd_litesdcard.o  \
 	  cmd_litesata.o    \
 	  sim_debug.o		\
-	  main.o
+	  main.o 
+
+#prevent removal of crt0.o
+.PRECIOUS : crt0.o
 
 ifneq "$(or $(TERM_NO_COMPLETE),$(TERM_MINI))" ""
 CFLAGS += -DTERM_NO_COMPLETE
