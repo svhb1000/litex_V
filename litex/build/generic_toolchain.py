@@ -26,6 +26,7 @@ class GenericToolchain:
         self.named_sc    = []
         self._vns        = None
         self._synth_opts = ""
+        self.local_sources = False
 
     def finalize(self):
         pass # Pass since optional.
@@ -62,6 +63,8 @@ class GenericToolchain:
         self.platform    = platform
         self.fragment    = fragment
 
+        copy_local = kwargs.get("copy_local", False)
+
         # Create Build Directory.
         os.makedirs(self._build_dir, exist_ok=True)
         cwd = os.getcwd()
@@ -83,7 +86,7 @@ class GenericToolchain:
 
         # Get signals and platform constraints
         self.named_sc, self.named_pc = platform.resolve_signals(self._vns)
-        platform.add_source(v_file)
+        platform.add_source(v_file, copy=self.local_sources)
 
         # Generate Design Timing Constraints File.
         tim_cst_file = self.build_timing_constraints(v_output.ns)

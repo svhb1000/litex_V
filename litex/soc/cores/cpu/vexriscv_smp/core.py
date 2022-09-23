@@ -354,7 +354,7 @@ class VexRiscvSMP(CPU):
         self.reset_address = reset_address
         assert reset_address == 0x0000_0000
 
-    def add_sources(self, platform):
+    def add_sources(self, platform, copy_sources=False):
         vdir = get_data_mod("cpu", "vexriscv_smp").data_location
         print(f"VexRiscv cluster : {self.cluster_name}")
         if not path.exists(os.path.join(vdir, self.cluster_name + ".v")):
@@ -377,10 +377,10 @@ class VexRiscvSMP(CPU):
         from litex.build.efinix import EfinixPlatform
         if isinstance(platform, EfinixPlatform):
             ram_filename = "Ram_1w_1rs_Efinix.v"
-        platform.add_source(os.path.join(vdir, ram_filename), "verilog")
+        platform.add_source(os.path.join(vdir, ram_filename), "verilog", copy=copy_sources)
 
         # Add Cluster.
-        platform.add_source(os.path.join(vdir,  self.cluster_name + ".v"), "verilog")
+        platform.add_source(os.path.join(vdir,  self.cluster_name + ".v"), "verilog", copy=copy_sources)
 
     def add_soc_components(self, soc, soc_region_cls):
         # Set UART/Timer0 CSRs/IRQs to the ones used by OpenSBI.
@@ -491,5 +491,5 @@ class VexRiscvSMP(CPU):
         self.specials += Instance(self.cluster_name, **self.cpu_params)
 
         # Add verilog sources
-        self.add_sources(self.platform)
-
+        self.add_sources(self.platform, copy_sources=self.platform.toolchain.local_sources)
+        

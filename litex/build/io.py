@@ -5,6 +5,7 @@
 # Copyright (c) 2015 Sebastien Bourdeauducq <sb@m-labs.hk>
 # SPDX-License-Identifier: BSD-2-Clause
 
+import os
 from migen import *
 from migen.fhdl.specials import Special, Tristate
 
@@ -74,19 +75,23 @@ class SDRInput(SDRIO):  pass
 class SDROutput(SDRIO): pass
 
 # SDR Tristate -------------------------------------------------------------------------------------
-
 class InferedSDRTristate(Module):
-    def __init__(self, io, o, oe, i, clk):
-        _o  = Signal()
-        _oe = Signal()
-        _i  = Signal()
-        self.specials += SDROutput(o, _o, clk)
-        self.specials += SDRInput(_i, i, clk)
-        self.submodules += InferedSDRIO(oe, _oe, clk)
-        self.specials += Tristate(io, _o, _oe, _i)
+    def __init__(self, io, o, oe, i, clk, **kwargs):
+        if 'platform' in kwargs:
+            self.specials += Instance("sdrio", io_pad=io, o_pad2in=i, i_out2pad=o, i_oe=oe, i_clk=clk)
+            kwargs["platform"].add_source(os.path.join(os.path.dirname(__loader__.path),"sdrio.v"), copy=kwargs["platform"].toolchain.local_sources)
+        else:
+            _o  = Signal()
+            _oe = Signal()
+            _i  = Signal()
+            self.specials += SDROutput(o, _o, clk)
+            self.specials += SDRInput(_i, i, clk)
+            self.submodules += InferedSDRIO(oe, _oe, clk)
+            self.specials += Tristate(io, _o, _oe, _i)
+
 
 class SDRTristate(Special):
-    def __init__(self, io, o, oe, i, clk=ClockSignal()):
+    def __init__(self, io, o, oe, i, clk=ClockSignal(), **kwargs):
         assert len(i) == len(o) == len(oe)
         Special.__init__(self)
         self.io           = wrap(io)
@@ -94,6 +99,8 @@ class SDRTristate(Special):
         self.oe           = wrap(oe)
         self.i            = wrap(i)
         self.clk          = wrap(clk)
+        #todo : refactor saving kwargs to global class variable to instance variable... but needed in lower(dr)
+        SDRTristate.kwargs = kwargs
 
     def iter_expressions(self):
         yield self, "io",  SPECIAL_INOUT
@@ -104,7 +111,7 @@ class SDRTristate(Special):
 
     @staticmethod
     def lower(dr):
-        return InferedSDRTristate(dr.io, dr.o, dr.oe, dr.i, dr.clk)
+        return InferedSDRTristate(dr.io, dr.o, dr.oe, dr.i, dr.clk, **SDRTristate.kwargs)
 
 # DDR Input/Output ---------------------------------------------------------------------------------
 

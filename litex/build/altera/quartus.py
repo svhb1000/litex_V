@@ -7,7 +7,7 @@
 # Copyright (c) 2022 Gwenhael Goavec-Merou <gwenhael.goavec-merou@trabucayre.com>
 # SPDX-License-Identifier: BSD-2-Clause
 
-import os
+import os, shutil
 import subprocess
 import sys
 import math
@@ -18,6 +18,9 @@ from migen.fhdl.structure import _Fragment
 from litex.build.generic_platform import Pins, IOStandard, Misc
 from litex.build.generic_toolchain import GenericToolchain
 from litex.build import tools
+
+import logging
+logging.basicConfig(level=logging.INFO)
 
 # AlteraQuartusToolchain ---------------------------------------------------------------------------
 
@@ -122,12 +125,18 @@ class AlteraQuartusToolchain(GenericToolchain):
         qsf.append("set_global_assignment -name DEVICE {}".format(self.platform.device))
 
         # Add sources
+        logger = logging.getLogger("QuartusToolchain")
         for filename, language, library, *copy in self.platform.sources:
             if language == "verilog": language = "systemverilog" # Enforce use of SystemVerilog
             tpl = "set_global_assignment -name {lang}_FILE {path} -library {lib}"
             # Do not add None type files
             if language is not None:
-                qsf.append(tpl.format(lang=language.upper(), path=filename.replace("\\", "/"), lib=library))
+                if copy and copy[0]==True:
+                    f=os.path.basename(filename)
+                else:
+                    f=filename.replace("\\", "/")
+                qsf.append(tpl.format(lang=language.upper(), path=f, lib=library))
+                logger.info("Adding file %s to project"%f)
             # Check if the file is a header. Those should not be explicitly added to qsf,
             # but rather included in include search_path
             else:
@@ -135,6 +144,13 @@ class AlteraQuartusToolchain(GenericToolchain):
                     fpath = os.path.dirname(filename)
                     if fpath not in platform.verilog_include_paths:
                         platform.verilog_include_paths.append(fpath)
+            if copy and copy[0]==True:
+                try:
+                    shutil.copy(filename, os.path.split(filename)[-1])
+                except shutil.SameFileError:
+                    #file is already there, no copy to do
+                    pass
+
 
         # Add ips
         for filename in self.platform.ips:
